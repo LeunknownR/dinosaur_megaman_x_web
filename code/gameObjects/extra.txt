@@ -1,0 +1,227 @@
+//#region CircleCollider
+class CircleCollider 
+{
+    constructor(radio, position) {
+        this.centerPosition = { 
+            x: position.x + radio, 
+            y: position.y + radio  
+        };
+        this.radio = radio;
+    }
+    UpdateCenterPosition(position) {
+        this.centerPosition = { 
+            x: position.x + this.radio, 
+            y: position.y + this.radio 
+        };
+    }
+    CollisionWith(circleCollider) {
+        const { getMagnitude, minus } =  mathFunctions;
+        const distance = getMagnitude(minus(
+            this.centerPosition,
+            circleCollider.centerPosition
+        ));
+        const additionRadios = this.radio + circleCollider.radio;
+        // console.log('Distance: ' + distance);
+        // console.log('additionRadios: ' + additionRadios);
+        return distance <= additionRadios;
+    }
+}
+export class MegamanX
+{
+    constructor(y) {
+        //Animation
+        this.timers = {
+            running: new TimerX(),
+            jumping: new TimerX(),
+            dashing: new TimerX()
+        };
+        this.iSprite = {
+            iR: 0,
+            iJ: 0,
+            iD: 0
+        };
+        this.sprites = {
+            running: [...sprites.megamanX.running],
+            jumping: [...sprites.megamanX.jumping],
+            dashing: [...sprites.megamanX.dashing]
+        };
+        this.sprite = this.sprites.running[0];
+        //Phisycs
+        this.position = { x: 100, y };
+        this.initialPos = y;
+        this.speedY = 0;
+        this.speedYMax = 9;
+        this.gravityForce = 2;
+        this.jumpForce = 28;
+        this.jumping = false;
+        const scale = 8.6;
+        this.dimension = { width: this.sprite.width/scale, height: this.sprite.height/scale }
+        //Collision
+        const radio = 26;
+        const centerPosition = { x: this.position.x + 15, y: this.position.y + 15 }
+        this.circleCollider = new CircleCollider(radio, centerPosition);
+        this.styleX = '#0f0';
+    }
+    Update() {
+        this.jump();
+        this.gravity();
+        this.managementCollider();
+        this.animation();
+    }
+    Draw(context2D = new CanvasRenderingContext2D()) {
+        const sprite = this.sprite;
+        const { width, height } = this.dimension;
+        const { x, y } = this.position;
+        context2D.drawImage(
+            sprite, 
+            0, 0, 
+            sprite.width, sprite.height, 
+            x, y, 
+            width, height
+        );
+        //testCollider(context2D);
+    }
+    managementCollider() {
+        if (keys.dashing && !this.jumping)
+        {
+            this.circleCollider.UpdateCenterPosition({ x: this.position.x + 20, y: this.position.y + 30 });
+            this.circleCollider.radio = 28;
+        }
+        else 
+        {
+            this.circleCollider.UpdateCenterPosition({ x: this.position.x + 15, y: this.position.y + 15 });
+            this.circleCollider.radio = 25;
+        }
+    }
+    testCollider(context2D) {
+        context2D.fillStyle = this.styleX;
+        const center = this.circleCollider.centerPosition;
+        const radio = this.circleCollider.radio;
+        context2D.fillRect(center.x, center.y, 4.5, 4.5);
+        context2D.fillRect(center.x, center.y - radio, 4.5, 4.5);
+        context2D.fillRect(center.x, center.y + radio, 4.5, 4.5);
+        context2D.fillRect(center.x + radio, center.y, 4.5, 4.5);
+        context2D.fillRect(center.x - radio, center.y, 4.5, 4.5);
+    }
+    animation() {
+        if (!this.jumping)
+        {
+            //Running
+            if (!keys.dashing) {
+                this.iSprite.iJ = 0;
+                this.iSprite.iD = 0;
+
+                this.timers.running.Invoke(() => {
+                    this.sprite = this.sprites.running[this.iSprite.iR];
+                    this.iSprite.iR++;
+                    if (this.iSprite.iR > sprites.megamanX.jumping.length)
+                        this.iSprite.iR = 0;
+                }, 65);
+            }
+            //Dashing
+            else {
+                this.iSprite.iR = 0;
+                this.iSprite.iJ = 0;
+
+                this.timers.dashing.Invoke(() => {
+                    this.sprite = this.sprites.dashing[this.iSprite.iD];
+                    this.iSprite.iD++;
+                    if (this.iSprite.iD > sprites.megamanX.dashing.length - 1) 
+                            this.iSprite.iD = 1;
+                }, 40);
+            }
+        }
+        //Jumping
+        else if (this.jumping) {
+            this.iSprite.iR = 0;
+            this.iSprite.iD = 0;
+
+            if (this.iSprite.iJ > this.sprites.running.length - 1)
+                this.iSprite.iJ = this.sprites.running.length - 1;
+            else {
+                this.timers.jumping.Invoke(() => {
+                    this.sprite = this.sprites.jumping[this.iSprite.iJ];
+                    this.iSprite.iJ++;
+                }, 90);
+            }
+        }
+    }
+    jump() {
+        if (keys.jumping && !this.jumping) 
+        {
+            this.jumping = true;
+            this.speedY = this.jumpForce;
+        }
+   }
+    gravity() {
+        if (this.jumping)
+        {
+            if (this.position.y - this.speedY - this.gravityForce > this.initialPos)
+            {
+                this.jumping = false;
+                this.speedY = 0;
+                this.position.y = this.initialPos;
+                return;
+            }
+            this.speedY -= this.gravityForce;
+            this.position.y -= this.speedY;            
+        }
+    }
+}
+export class Obstacle 
+{
+    constructor(x, scale) {
+        //Animation
+        this.sprite = sprites.obstacles.stormEagle[0];
+        this.dimension = { width: this.sprite.width/scale, height: this.sprite.height/scale };
+        //Physics
+        this.position = { x, y: 215 };
+        //Collision
+        const radio = 40;
+        const centerPosition = {
+            x: this.position.x + 10,
+            y: this.position.y
+        };
+        this.circleCollider = new CircleCollider(radio, centerPosition);
+    }
+    managementCollider() {
+        this.circleCollider.UpdateCenterPosition({ x: this.position.x + 12, y: this.position.y + 6 });
+        this.circleCollider.radio = 40;
+    }
+    testCollider(context2D) {
+        context2D.fillStyle = '#0f0';
+        const center = this.circleCollider.centerPosition;
+        const radio = this.circleCollider.radio;
+        context2D.fillRect(center.x, center.y, 4.5, 4.5);
+        context2D.fillRect(center.x, center.y - radio, 4.5, 4.5);
+        context2D.fillRect(center.x, center.y + radio, 4.5, 4.5);
+        context2D.fillRect(center.x + radio, center.y, 4.5, 4.5);
+        context2D.fillRect(center.x - radio, center.y, 4.5, 4.5);
+    }
+    Update(delta) {
+        this.managementCollider();
+        this.position.x-= delta;
+        this.respawn();
+    }
+    Draw(context2D) {
+        const { x, y } = this.position;
+        const { width, height } = this.dimension;
+        const sprite = this.sprite;
+        context2D.drawImage(
+            sprite, 
+            0, 0,
+            sprite.width, sprite.height,
+            x, y,
+            width, height
+        );
+        //this.testCollider(context2D);
+    }
+    respawn() {
+        if (this.position.x <= -this.dimension.width)
+            this.position.x = canvas.width + this.dimension.width;
+    }
+    isRespawn() {
+        return this.position.x <= -this.dimension.width;
+    }
+}
+//#endregion

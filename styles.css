@@ -1,0 +1,19 @@
+body {
+    background-color: #000000;
+}
+#canvas-game {
+    position: absolute;
+    left: 4vw;
+    top: 4vh;
+    width: 90vw;
+    height: 90vh;
+    border: 5px ridge #b3b3b33d;
+}
+@media (max-width: 500px) {
+    #canvas-game {
+        left: 3vw;
+        top: 30vh;
+        width: 90vw;
+        height: 20vh;
+    }
+  }
