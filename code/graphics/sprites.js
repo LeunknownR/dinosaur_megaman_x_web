@@ -1,6 +1,5 @@
 export const sprites = {
-    background: new Image(),
-    cloud: new Image(),
+    background: null,
     obstacles: {
         auto: [],
         stormEagle: []
@@ -16,7 +15,8 @@ export const sprites = {
     }
 };
 
-export const loadImages = () => {
+const fillSprites = () => {
+    sprites.background = new Image();
     sprites.background.src = "../resources/background.jpg";
     let i = 0;
     for (i = 0; i < 3; i++)
@@ -54,4 +54,25 @@ export const loadImages = () => {
         sprites.megamanX.death.particles[i] = new Image();
         sprites.megamanX.death.particles[i].src = "../resources/X/death/particles/" + i + ".png";
     }
+}
+const loadSprites = async () => {
+    await Promise.all(
+        [
+            sprites.background,
+            ...sprites.megamanX.dashing,
+            ...sprites.megamanX.jumping,
+            ...sprites.megamanX.running,
+            ...sprites.megamanX.death.X,
+            ...sprites.megamanX.death.particles,
+            ...sprites.obstacles.auto,
+            ...sprites.obstacles.stormEagle
+        ].map(sprite => new Promise(res => {
+            console.log(sprite);
+            sprite.addEventListener("load", () => res());
+        }))
+    );
+}
+export const startSprites = async () => {
+    fillSprites();
+    await loadSprites();
 }

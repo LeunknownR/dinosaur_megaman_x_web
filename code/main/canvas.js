@@ -1,5 +1,4 @@
 import { states, Game } from './states.js';
-import { loadImages } from '../graphics/sprites.js';
 
 export const canvas = {
     element: null,
@@ -11,7 +10,6 @@ export const canvas = {
 export const initCanvas = () => {
     canvas.element = document.getElementById('canvas-game');
     canvas.context2D = canvas.element.getContext('2d');
-    loadImages();
     states.game = new Game();
 }
 export const clearCanvas = () => {
