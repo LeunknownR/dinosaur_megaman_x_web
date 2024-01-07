@@ -186,7 +186,8 @@ export const DrawText = (context2D, text, font, color, position, withStroke = fa
 
 export class DeathParticlesX
 {
-    constructor() {
+    constructor(megamanX) {
+        this.megamanX = megamanX;
         this.quantityParticles = 16,
         this.headings = [];
         this.animator = new Animator(sprites.megamanX.death.particles, 20);
@@ -209,16 +210,28 @@ export class DeathParticlesX
             angle+= difference;
         };
     }
+    spreadParticles() {
+        const { position, dimension } = this.megamanX;
+        this.position = { 
+            x: position.x + dimension.width/3, 
+            y: position.y + dimension.height/2
+        };
+    }
     Update() {
+        this.spreadParticles();
+        if (!this.megamanX.death) {
+            this.megamanX.UpdateDeath();
+            return;
+        }
         this.animator.Update();
         const { getHeading } = mathFunctions;
         
         for (let i = 0; i < this.quantityParticles; i++)
         {
             this.headings[i] = getHeading(this.angles[i]);
-            this.angles[i]+= 3.5;
+            this.angles[i] += 3.5;
         };        
-        this.deltaPosition+= 4;
+        this.deltaPosition += 4;
     }
     Draw(context2D = new CanvasRenderingContext2D()) {
         const { scaleProduct, plus } = mathFunctions;
@@ -264,7 +277,7 @@ class BoxCollider {
             y2 + height2 >= y1);
     }
 }
-export class MegamanX2
+export class MegamanX
 {
     constructor(y) {
         //Animation
@@ -449,6 +462,7 @@ export class Obstacle1 {
         this.dimension = { width: spritesAnim[0].width/scale, height: spritesAnim[0].height/scale };
         //Physics
         this.position = { x: canvas.width, y };
+        this.speedDelta = 0;
         //Collision
         this.typeEnemy = typeEnemy;
         let x = this.position.x;
@@ -462,7 +476,6 @@ export class Obstacle1 {
             width = this.dimension.width - 70;
             height-= 10;
         }
-        // console.log(keys.dashing);
         this.boxCollider = new BoxCollider(
             { 
                 x, newY
@@ -491,11 +504,14 @@ export class Obstacle1 {
             y
         };
     }
-    Update(delta) {
+    SetSpeedDelta(value) {
+        this.speedDelta = value;
+    }
+    Update() {
         this.managementCollision();
         this.respawn();
         this.animator.Update();
-        this.position.x-= delta;
+        this.position.x-= this.speedDelta;
     }
     Draw(context2D) {
         const { x, y } = this.position;
